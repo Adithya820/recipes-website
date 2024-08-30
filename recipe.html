@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Book</title>
+    <style>
+        body {
+            background-color: #87CEEB;
+            font-family: Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            margin: 0;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .food-icon {
+            position: fixed;
+            font-size: 24px;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.7;
+            animation: float 20s linear infinite;
+        }
+        @keyframes float {
+            0% {
+                transform: translate(-100vw, 0) rotate(0deg);
+            }
+            100% {
+                transform: translate(100vw, 0) rotate(360deg);
+            }
+        }
+        h1 {
+            color: #0066cc;
+            text-align: center;
+            animation: fadeIn 1s ease-out;
+        }
+        #recipeList, #recipeDetails {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            flex-grow: 1;
+        }
+        #recipeList {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .recipe-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .recipe-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .recipe-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .recipe-card:hover img {
+            transform: scale(1.05);
+        }
+        .recipe-card-content {
+            padding: 15px;
+        }
+        .recipe-card h3 {
+            margin: 0 0 10px 0;
+            color: #0066cc;
+        }
+        #recipeDetails {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 30px;
+            animation: slideIn 0.5s ease-out;
+        }
+        #recipeDetails img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        #backButton, #snackFilterButton {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        #backButton:hover, #snackFilterButton:hover {
+            background-color: #0052a3;
+        }
+        #snackFilterButton.active {
+            background-color: #4CAF50;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #0066cc;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Recipe Book</h1>
+    <div id="recipeList"><div class="loader"></div></div>
+    <div id="recipeDetails" style="display: none;"></div>
+    <button id="backButton" style="display: none;">Back to Recipe List</button>
+    <div style="text-align: center; margin-top: 20px;">
+        <button id="snackFilterButton">Show Snacks</button>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script>
+        let recipes = [];
+        let snacks = [];
+        let showingSnacksOnly = false;
+
+        const snackNames = [
+            "Italian Tiramisu",
+            "Blueberry Banana Smoothie",
+            "Brazilian Caipirinha",
+            "Mango Lassi",
+            "Chocolate Chip Cookies",
+            "Lebanese Falafel Wrap"
+        ];
+
+        function showRecipeList() {
+            $('#recipeDetails').fadeOut(300, function() {
+                $('#recipeList').fadeIn(300);
+                $('#backButton').fadeOut(300);
+                $('#snackFilterButton').fadeIn(300);
+            });
+        }
+
+        function showRecipeDetails(id) {
+            $('#recipeList').fadeOut(300, function() {
+                $('#recipeDetails').fadeIn(300);
+                $('#backButton').fadeIn(300);
+                $('#snackFilterButton').fadeOut(300);
+
+                let recipe = [...recipes, ...snacks].find(r => r.id === id);
+                if (recipe) {
+                    let detailsHtml = `
+                        <h2>${recipe.name}</h2>
+                        <img src="${recipe.image}" alt="${recipe.name}">
+                        <p><strong>Cuisine:</strong> ${recipe.cuisine}</p>
+                        <p><strong>Ingredients:</strong></p>
+                        <ul>
+                            ${recipe.ingredients.map(ing => `<li>${ing}</li>`).join('')}
+                        </ul>
+                        <p><strong>Instructions:</strong></p>
+                        <ol>
+                            ${recipe.instructions.map(inst => `<li>${inst}</li>`).join('')}
+                        </ol>
+                    `;
+                    $('#recipeDetails').html(detailsHtml);
+                }
+            });
+        }
+
+        function createFoodIcons() {
+            const foodIcons = [
+                '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍒', '🍑',
+                '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥕', '🌽', '🥔',
+                '🍠', '🥐', '🍞', '🥖', '🥨', '🧀', '🍳', '🥚', '🥓', '🥩',
+                '🍗', '🍖', '🌭', '🍔', '🍟', '🍕', '🥪', '🥙', '🌮', '🌯',
+                '🥗', '🥘', '🥫', '🍝', '🍜', '🍲', '🍛', '🍣', '🍱', '🥟',
+                '🍤', '🍙', '🍚', '🍘', '🍥', '🥠', '🥮', '🍢', '🍡', '🍧',
+                '🍨', '🍦', '🥧', '🍰', '🎂', '🍮', '🍭', '🍬', '🍫', '🍿',
+                '🥜', '🌰', '🥛', '🍼', '☕️', '🍵', '🥤', '🍶', '🍺', '🍷'
+            ];
+
+            for (let i = 0; i < 20; i++) {
+                let foodIcon = $('<div class="food-icon"></div>');
+                let randomIcon = foodIcons[Math.floor(Math.random() * foodIcons.length)];
+                foodIcon.text(randomIcon);
+                foodIcon.css({
+                    top: Math.random() * window.innerHeight + 'px',
+                    left: -30 + 'px',
+                    fontSize: (Math.random() * 20 + 20) + 'px',
+                    animationDuration: (Math.random() * 10 + 10) + 's',
+                    animationDelay: (Math.random() * 10) + 's'
+                });
+                $('body').append(foodIcon);
+            }
+        }
+
+        function displayRecipes(recipesToShow) {
+            let listHtml = recipesToShow.map(recipe => `
+                <div class="recipe-card" data-id="${recipe.id}">
+                    <img src="${recipe.image}" alt="${recipe.name}">
+                    <div class="recipe-card-content">
+                        <h3>${recipe.name}</h3>
+                        <p>${recipe.cuisine}</p>
+                    </div>
+                </div>
+            `).join('');
+            $('#recipeList').html(listHtml);
+            
+            $('.recipe-card').each(function(index) {
+                $(this).delay(100 * index).fadeIn(500);
+            });
+        }
+
+        $(document).ready(function() {
+            createFoodIcons();
+
+            $.get('https://dummyjson.com/recipes', function(data) {
+                recipes = data.recipes.filter(recipe => !snackNames.includes(recipe.name));
+                snacks = data.recipes.filter(recipe => snackNames.includes(recipe.name));
+                displayRecipes(recipes);
+            });
+
+            $(document).on('click', '.recipe-card', function() {
+                let id = $(this).data('id');
+                history.pushState({id: id}, '', `?recipe=${id}`);
+                showRecipeDetails(id);
+            });
+
+            $('#backButton').click(function() {
+                history.pushState({}, '', '/');
+                showRecipeList();
+                if (showingSnacksOnly) {
+                    displayRecipes(snacks);
+                } else {
+                    displayRecipes(recipes);
+                }
+            });
+
+            $('#snackFilterButton').click(function() {
+                showingSnacksOnly = !showingSnacksOnly;
+                $(this).toggleClass('active');
+                if (showingSnacksOnly) {
+                    $(this).text('Show All Recipes');
+                    displayRecipes(snacks);
+                } else {
+                    $(this).text('Show Snacks');
+                    displayRecipes(recipes);
+                }
+            });
+
+            $(window).on('popstate', function(event) {
+                if (event.originalEvent.state && event.originalEvent.state.id) {
+                    showRecipeDetails(event.originalEvent.state.id);
+                } else {
+                    showRecipeList();
+                }
+            });
+
+            // Check if we should show a specific recipe on page load
+            let urlParams = new URLSearchParams(window.location.search);
+            let recipeId = urlParams.get('recipe');
+            if (recipeId) {
+                showRecipeDetails(parseInt(recipeId));
+            }
+        });
+    </script>
+</body>
+</html>
